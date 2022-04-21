@@ -1,5 +1,7 @@
-from nest.experiment import *
 from nest.topology import *
+from nest.experiment import *
+from nest.topology.network import Network
+from nest.topology.address_helper import AddressHelper
 import sys
 
 def tcp_up(NO_TCP_FLOWS, AQM):
@@ -18,14 +20,10 @@ def tcp_up(NO_TCP_FLOWS, AQM):
     ###### TOPOLOGY CREATION ######
 
     # Creating the routers for the dumbbell topology
-    left_router = Node("left-router")
-    right_router = Node("right-router")
+    left_router = Router("left-router")
+    right_router = Router("right-router")
 
-    # Enabling IP forwarding for the routers
-    left_router.enable_ip_forwarding()
-    right_router.enable_ip_forwarding()
-
-    # Lists to store all the left and right nodes
+     # Lists to store all the left and right nodes
     left_nodes = []
     right_nodes = []
 
@@ -44,54 +42,57 @@ def tcp_up(NO_TCP_FLOWS, AQM):
     left_node_connections = []
     right_node_connections = []
 
+    # A network object to auto generate addresses in the same network
+    # This network is used for all the left-nodes and the left-router
+    left_network = Network("10.0.0.0/24")
+    
+    # This network is used for all the right-nodes and the right-router
+    right_network = Network("10.0.1.0/24")
+
+    # This network is used for the connections between the two routers
+    router_network = Network("10.0.2.0/24")
+
     # Connections of the left-nodes to the left-router
     for i in range(num_of_left_nodes):
-        left_node_connections.append(connect(left_nodes[i], left_router))
+        left_node_connections.append(connect(left_nodes[i], left_router, network=left_network))
 
     # Connections of the right-nodes to the right-router
     for i in range(num_of_right_nodes):
-        right_node_connections.append(connect(right_nodes[i], right_router))
+        right_node_connections.append(connect(right_nodes[i], right_router, network=right_network))
 
     # Connecting the two routers
-    (left_router_connection, right_router_connection) = connect(left_router, right_router)
+    (left_router_connection, right_router_connection) = connect(left_router, right_router, network=router_network)
+
+    # Assign IPv4 addresses to all the interfaces in the network.
+    AddressHelper.assign_addresses()
 
     print("Connections made")
 
-    ###### ADDRESS ASSIGNMENT ######
+    # ###### ADDRESS ASSIGNMENT ######
 
-    # A subnet object to auto generate addresses in the same subnet
-    # This subnet is used for all the left-nodes and the left-router
-    left_subnet = Subnet("10.0.0.0/24")
+    # for i in range(num_of_left_nodes):
+    #     # Copying a left-node's interface and it's pair to temporary variables
+    #     node_int = left_node_connections[i][0]
+    #     router_int = left_node_connections[i][1]
 
-    for i in range(num_of_left_nodes):
-        # Copying a left-node's interface and it's pair to temporary variables
-        node_int = left_node_connections[i][0]
-        router_int = left_node_connections[i][1]
+    #     # Assigning addresses to the interfaces
+    #     node_int.set_address(left_network.get_next_addr())
+    #     router_int.set_address(left_network.get_next_addr())
 
-        # Assigning addresses to the interfaces
-        node_int.set_address(left_subnet.get_next_addr())
-        router_int.set_address(left_subnet.get_next_addr())
+    # for i in range(num_of_right_nodes):
+    #     # Copying a right-node's interface and it's pair to temporary variables
+    #     node_int = right_node_connections[i][0]
+    #     router_int = right_node_connections[i][1]
 
-    # This subnet is used for all the right-nodes and the right-router
-    right_subnet = Subnet("10.0.1.0/24")
+    #     # Assigning addresses to the interfaces
+    #     node_int.set_address(right_network.get_next_addr())
+    #     router_int.set_address(right_network.get_next_addr())
 
-    for i in range(num_of_right_nodes):
-        # Copying a right-node's interface and it's pair to temporary variables
-        node_int = right_node_connections[i][0]
-        router_int = right_node_connections[i][1]
+    # # Assigning addresses to the connections between the two routers
+    # left_router_connection.set_address(router_network.get_next_addr())
+    # right_router_connection.set_address(router_network.get_next_addr())
 
-        # Assigning addresses to the interfaces
-        node_int.set_address(right_subnet.get_next_addr())
-        router_int.set_address(right_subnet.get_next_addr())
-
-    # This subnet is used for the connections between the two routers
-    router_subnet = Subnet("10.0.2.0/24")
-
-    # Assigning addresses to the connections between the two routers
-    left_router_connection.set_address(router_subnet.get_next_addr())
-    right_router_connection.set_address(router_subnet.get_next_addr())
-
-    print("Addresses are assigned")
+    # print("Addresses are assigned")
 
     ####### ROUTING #######
 
@@ -150,7 +151,6 @@ def tcp_up(NO_TCP_FLOWS, AQM):
     left_router_connection.set_attributes(bottleneck_bandwidth, router_router_latency, AQM)
     right_router_connection.set_attributes(bottleneck_bandwidth, router_router_latency, AQM)
 
-
     ######  RUN TESTS ######
 
     exp_name = "tcp_" + str(NO_TCP_FLOWS) + "up"
@@ -189,12 +189,8 @@ def tcp_down(NO_TCP_FLOWS, AQM):
     ###### TOPOLOGY CREATION ######
 
     # Creating the routers for the dumbbell topology
-    right_router = Node("right-router")
-    left_router = Node("left-router")
-
-    # Enabling IP forwarding for the routers
-    right_router.enable_ip_forwarding()
-    left_router.enable_ip_forwarding()
+    right_router = Router("right-router")
+    left_router = Router("left-router")
 
     # Lists to store all the right and left nodes
     right_nodes = []
@@ -214,55 +210,55 @@ def tcp_down(NO_TCP_FLOWS, AQM):
     # Lists of tuples to store the interfaces connecting the router and nodes
     right_node_connections = []
     left_node_connections = []
+    
+    # A network object to auto generate addresses in the same network
+    # This network is used for all the left-nodes and the left-router
+    left_network = Network("10.0.0.0/24")
+    
+    # This network is used for all the right-nodes and the right-router
+    right_network = Network("10.0.1.0/24")
+
+    # This network is used for the connections between the two routers
+    router_network = Network("10.0.2.0/24")
 
     # Connections of the right-nodes to the right-router
     for i in range(num_of_right_nodes):
-        right_node_connections.append(connect(right_nodes[i], right_router))
+        right_node_connections.append(connect(right_nodes[i], right_router, network=left_network))
 
     # Connections of the left-nodes to the left-router
     for i in range(num_of_left_nodes):
-        left_node_connections.append(connect(left_nodes[i], left_router))
+        left_node_connections.append(connect(left_nodes[i], left_router, network=right_network))
 
     # Connecting the two routers
-    (right_router_connection, left_router_connection) = connect(right_router, left_router)
+    (right_router_connection, left_router_connection) = connect(right_router, left_router, network=router_network)
 
     print("Connections made")
 
-    ###### ADDRESS ASSIGNMENT ######
+    # ###### ADDRESS ASSIGNMENT ######
 
-    # A subnet object to auto generate addresses in the same subnet
-    # This subnet is used for all the right-nodes and the right-router
-    right_subnet = Subnet("10.0.0.0/24")
+    # for i in range(num_of_right_nodes):
+    #     # Copying a right-node's interface and it's pair to temporary variables
+    #     node_int = right_node_connections[i][0]
+    #     router_int = right_node_connections[i][1]
 
-    for i in range(num_of_right_nodes):
-        # Copying a right-node's interface and it's pair to temporary variables
-        node_int = right_node_connections[i][0]
-        router_int = right_node_connections[i][1]
+    #     # Assigning addresses to the interfaces
+    #     node_int.set_address(right_network.get_next_addr())
+    #     router_int.set_address(right_network.get_next_addr())
 
-        # Assigning addresses to the interfaces
-        node_int.set_address(right_subnet.get_next_addr())
-        router_int.set_address(right_subnet.get_next_addr())
+    # for i in range(num_of_left_nodes):
+    #     # Copying a left-node's interface and it's pair to temporary variables
+    #     node_int = left_node_connections[i][0]
+    #     router_int = left_node_connections[i][1]
 
-    # This subnet is used for all the left-nodes and the left-router
-    left_subnet = Subnet("10.0.1.0/24")
+    #     # Assigning addresses to the interfaces
+    #     node_int.set_address(left_network.get_next_addr())
+    #     router_int.set_address(left_network.get_next_addr())
 
-    for i in range(num_of_left_nodes):
-        # Copying a left-node's interface and it's pair to temporary variables
-        node_int = left_node_connections[i][0]
-        router_int = left_node_connections[i][1]
+    # # Assigning addresses to the connections between the two routers
+    # right_router_connection.set_address(router_network.get_next_addr())
+    # left_router_connection.set_address(router_network.get_next_addr())
 
-        # Assigning addresses to the interfaces
-        node_int.set_address(left_subnet.get_next_addr())
-        router_int.set_address(left_subnet.get_next_addr())
-
-    # This subnet is used for the connections between the two routers
-    router_subnet = Subnet("10.0.2.0/24")
-
-    # Assigning addresses to the connections between the two routers
-    right_router_connection.set_address(router_subnet.get_next_addr())
-    left_router_connection.set_address(router_subnet.get_next_addr())
-
-    print("Addresses are assigned")
+    # print("Addresses are assigned")
 
     ####### ROUTING #######
 
