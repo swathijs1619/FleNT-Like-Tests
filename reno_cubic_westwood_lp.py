@@ -86,8 +86,9 @@ exp = Experiment("reno_vs_cubic_vs_westwood_vs_lp")
 flow1 = Flow(h1, h2, eth2.get_address(), 0, 200, 1)
 flow2 = Flow(h2, h1, eth1.get_address(), 0, 200, 1)
 
-# Use `flow1` as a TCP CUBIC flow.
-# TCP CUBIC is default in Linux, hence no additional setting is required.
+# Use `flow1` object to add 4 tcp flows as upload flows using reno, cubic, westwood and lp congestion control algorithms.
+# Use `flow2` object to add 4 tcp flows as download flows using reno, cubic, westwood and lp congestion control algorithms.
+
 exp.add_tcp_flow(flow1, "reno")
 exp.add_tcp_flow(flow1, "cubic")
 exp.add_tcp_flow(flow1, "westwood")
