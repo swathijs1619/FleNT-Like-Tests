@@ -9,7 +9,7 @@ from nest.experiment import *
 from nest.topology.network import Network
 from nest.topology.address_helper import AddressHelper
 
-# This program emulates "TCP reno_cubic_westwood_ledbat" experiment which is basically having 4 flows each from both the directions,
+# This program emulates "TCP reno_cubic_westwood_lp" experiment which is basically having 4 flows each from both the directions,
 # i.e., four from client to the server (left-to-right) and the other four from the server to the client (right-to-left). 
 # Two hosts `h1` and `h2` are connected by two routers `r1` and `r2`.
 
@@ -23,7 +23,7 @@ from nest.topology.address_helper import AddressHelper
 ##############################################################################
 
 # This program runs for 200 seconds and creates a new directory called
-# `reno_cubic_westwood_ledbat(date-timestamp)_dump`. It contains a `README`
+# `reno_cubic_westwood_lp(date-timestamp)_dump`. It contains a `README`
 # which provides details about the sub-directories and files within this
 # directory. See the plots in `netperf`, `ping` and `ss` sub-directories for
 # this program.
@@ -75,7 +75,7 @@ r1.add_route("DEFAULT", etr1b)
 r2.add_route("DEFAULT", etr2a)
 
 # Set up an Experiment. This API takes the name of the experiment as a string.
-exp = Experiment("reno_vs_cubic_vs_westwood_vs_ledbat")
+exp = Experiment("reno_vs_cubic_vs_westwood_vs_lp")
 
 # Configure 8 flows. Four from `h1` to `h2` and the other four from `h2` to `h1` respectively. 
 # We do not use it as a TCP flow yet.
@@ -91,11 +91,11 @@ flow2 = Flow(h2, h1, eth1.get_address(), 0, 200, 1)
 exp.add_tcp_flow(flow1, "reno")
 exp.add_tcp_flow(flow1, "cubic")
 exp.add_tcp_flow(flow1, "westwood")
-exp.add_tcp_flow(flow1, "ledbat")
+exp.add_tcp_flow(flow1, "lp")
 exp.add_tcp_flow(flow2, "reno")
 exp.add_tcp_flow(flow2, "cubic")
 exp.add_tcp_flow(flow2, "westwood")
-exp.add_tcp_flow(flow2, "ledbat")
+exp.add_tcp_flow(flow2, "lp")
 
 # Run the experiment
 exp.run()

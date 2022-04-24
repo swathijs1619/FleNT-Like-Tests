@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (c) 2019-2022 NITK Surathkal
+
 ########################
 # SHOULD BE RUN AS ROOT
 ########################
@@ -6,162 +9,93 @@ from nest.experiment import *
 from nest.topology.network import Network
 from nest.topology.address_helper import AddressHelper
 
-# This program emulates point to point networks that connect four hosts: `h1`
-# - `h4` via two routers `r1` and `r2`. One TCP flow is configured from `h1` to
-# `h3` and one UDP flow is configured from `h2` to `h4`. It is similar to
-# `tcp-udp-point-to-point.py` in `examples/tcp`. The links `h1` <--> `r1`,
-# `h2` <--> `r1`, and `r2` <--> `h3`, `r2` <--> `h4` are edge links. The link
-# `r1` <--> `r2` is the bottleneck link with lesser bandwidth and higher
-# propagation delays. This program demonstrates how to configure CHOose and
-# Keep for responsive flows, CHOose and Kill for unresponsive flows (`choke`)
-# queue discipline (qdisc) and obtain the relevant statistics. `choke` is
-# enabled on the link from `r1` to `r2`, but not from `r2` to `r1` because
-# data packets flow in one direction only (left to right) in this example.
+# This program emulates "TCP reno_cubic_westwood_cdg" experiment which is basically having 4 flows each from both the directions,
+# i.e., four from client to the server (left-to-right) and the other four from the server to the client (right-to-left). 
+# Two hosts `h1` and `h2` are connected by two routers `r1` and `r2`.
 
 ##############################################################################
 #                              Network Topology                              #
 #                                                                            #
-#    <- 1000mbit, 1ms ->                              <- 1000mbit, 1ms ->    #
-# h1 --------------------|                          |-------------------- h5 #
-#           TCP          |                          |         TCP            #
-# h2                     |    <- 10mbit, 10ms ->    |                     h6 #
-#                         r1 -------------------- r2                         #
-# h3                     |      choke qdisc -->     |                     h7 #
-#                        |                          |                        #
-# h4 --------------------|                          |-------------------- h8 #
-#    <- 1000mbit, 1ms ->                              <- 1000mbit, 1ms ->    #
+#      1000mbit, 1ms -->       10mbit, 10ms -->       1000mbit, 1ms -->      #
+# h1 -------------------- r1 -------------------- r2 -------------------- h2 #
+#     <-- 1000mbit, 1ms       <-- 10mbit, 10ms        <-- 1000mbit, 1ms      #
 #                                                                            #
 ##############################################################################
 
 # This program runs for 200 seconds and creates a new directory called
-# `choke-point-to-point(date-timestamp)_dump`. It contains a `README` that
-# provides details about the sub-directories and files within this directory.
-# See the plots in `netperf`, `ping` and `ss` sub-directories for this program.
+# `reno_cubic_westwood_cdg(date-timestamp)_dump`. It contains a `README`
+# which provides details about the sub-directories and files within this
+# directory. See the plots in `netperf`, `ping` and `ss` sub-directories for
+# this program.
 
-# Create four hosts `h1` to `h4`, and two routers `r1` and `r2`
+# Create two hosts `h1` and `h2`, and two routers `r1` and `r2`
 h1 = Node("h1")
 h2 = Node("h2")
-h3 = Node("h3")
-h4 = Node("h4")
-h5 = Node("h5")
-h6 = Node("h6")
-h7 = Node("h7")
-h8 = Node("h8")
 r1 = Router("r1")
 r2 = Router("r2")
 
-# Set the IPv4 address for the networks
-n1 = Network("192.168.1.0/24")  # network consisting `h1` and `r1`
-n2 = Network("192.168.2.0/24")  # network consisting `h2` and `r1`
-n3 = Network("192.168.3.0/24")  # network consisting `h3` and `r1`
-n4 = Network("192.168.4.0/24")  # network consisting `h4` and `r1
+# Set the IPv4 address for the networks, and not the interfaces.
+# We will use the `AddressHelper` later to assign addresses to the interfaces.
+n1 = Network("192.168.1.0/24")  # network on the left of `r1`
+n2 = Network("192.168.2.0/24")  # network between two routers
+n3 = Network("192.168.3.0/24")  # network on the right of `r2`
 
-
-n5 = Network("192.168.5.0/24")  # network between two routers
-
-n6 = Network("192.168.6.0/24")  # network consisting `r2` and `h5`
-n7 = Network("192.168.7.0/24")  # network consisting `r2` and `h6`
-n8 = Network("192.168.8.0/24")  # network consisting `r2` and `h7`
-n9 = Network("192.168.9.0/24")  # network consisting `r2` and `h8`
-
-
-# Connect `h1` and `h2` to `r1`, `r1` to `r2`, and then `r2` to `h3` and `h4`.
-# `eth1` to `eth4` are the interfaces at `h1` to `h4`, respectively.
-# `etr1a`, `etr1b` and `etr1c` are three interfaces at `r1` that connect it
-# with `h1`, `h2` and `r2`, respectively.
-# `etr2a`, `etr2b` and `etr2c` are three interfaces at `r2` that connect it
-# with `r1`, `h3` and `h4`, respectively.
+# Connect `h1` to `r1`, `r1` to `r2`, and then `r2` to `h2`
+# `eth1` and `eth2` are the interfaces at `h1` and `h2`, respectively.
+# `etr1a` is the first interface at `r1` which connects it with `h1`
+# `etr1b` is the second interface at `r1` which connects it with `r2`
+# `etr2a` is the first interface at `r2` which connects it with `r1`
+# `etr2b` is the second interface at `r2` which connects it with `h2`
 (eth1, etr1a) = connect(h1, r1, network=n1)
-(eth2, etr1b) = connect(h2, r1, network=n2)
-(eth3, etr1c) = connect(h3, r1, network=n3)
-(eth4, etr1d) = connect(h4, r1, network=n4)
-
-(etr1e, etr2a) = connect(r1, r2, network=n5)
-
-(etr2b, eth5) = connect(r2, h5, network=n6)
-(etr2c, eth6) = connect(r2, h6, network=n7)
-(etr2d, eth7) = connect(r2, h7, network=n8)
-(etr2e, eth8) = connect(r2, h8, network=n9)
+(etr1b, etr2a) = connect(r1, r2, network=n2)
+(etr2b, eth2) = connect(r2, h2, network=n3)
 
 # Assign IPv4 addresses to all the interfaces in the network.
 AddressHelper.assign_addresses()
 
-# Configure the parameters of `choke` qdisc.  For more details about `choke`
-# in Linux, use this command on CLI: `man tc-choke`.
-qdisc = "pfifo"
-# choke_parameters = {
-#     "limit": "100",  # set the queue capacity to 100 packets
-#     "min": "5",  # set the minimum threshold to 5 packets
-#     "max": "15",  # set the maximum threshold to 15 packets
-# }
-
-# Set the link attributes: `h1` and `h2` --> `r1` --> `r2` --> `h3` and `h4`
-# Note: we enable `choke` queue discipline on the link from `r1` to `r2`.
+# Set the link attributes: `h1` --> `r1` --> `r2` --> `h2`
+# Note: we enable `pfifo` queue discipline on the link from `r1` to `r2`.
+# Default configuration of `pfifo` in Linux is used. For more details about
+# `pfifo` in Linux, use this command on CLI: `man tc-pfifo`.
 eth1.set_attributes("1000mbit", "1ms")  # from `h1` to `r1`
-eth2.set_attributes("1000mbit", "1ms")  # from `h2` to `r1`
-eth3.set_attributes("1000mbit", "1ms")  # from `h3` to `r1`
-eth4.set_attributes("1000mbit", "1ms")  # from `h4` to `r1`
+etr1b.set_attributes("10mbit", "10ms", "pfifo")  # from `r1` to `r2`
+etr2b.set_attributes("1000mbit", "1ms")  # from `r2` to `h2`
 
-etr1e.set_attributes("10mbit", "10ms", qdisc)  # from `r1` to `r2`
-
-etr2b.set_attributes("1000mbit", "1ms")  # from `r2` to `h5`
-etr2c.set_attributes("1000mbit", "1ms")  # from `r2` to `h6`
-etr2d.set_attributes("1000mbit", "1ms")  # from `r2` to `h7`
-etr2e.set_attributes("1000mbit", "1ms")  # from `r2` to `h8`
-
-
-# Set the link attributes: `h3` and `h4` --> `r2` --> `r1` --> `h1` and `h2`
-eth5.set_attributes("1000mbit", "1ms")  # from `h5` to `r2`
-eth6.set_attributes("1000mbit", "1ms")  # from `h6` to `r2`
-eth7.set_attributes("1000mbit", "1ms")  # from `h7` to `r2`
-eth8.set_attributes("1000mbit", "1ms")  # from `h8` to `r2`
-
-
+# Set the link attributes: `h2` --> `r2` --> `r1` --> `h1`
+eth2.set_attributes("1000mbit", "1ms")  # from `h2` to `r2`
 etr2a.set_attributes("10mbit", "10ms")  # from `r2` to `r1`
-
 etr1a.set_attributes("1000mbit", "1ms")  # from `r1` to `h1`
-etr1b.set_attributes("1000mbit", "1ms")  # from `r1` to `h2`
-etr1c.set_attributes("1000mbit", "1ms")  # from `r1` to `h3`
-etr1d.set_attributes("1000mbit", "1ms")  # from `r1` to `h4`
 
-
-
-# Set default routes in all the hosts and routers.
+# Set default routes in `h1` and `h2`. Additionally, set default routes in
+# `r1` and `r2` so that the packets that cannot be forwarded based on the
+# entries in their routing table are sent via a default interface.
 h1.add_route("DEFAULT", eth1)
 h2.add_route("DEFAULT", eth2)
-h3.add_route("DEFAULT", eth3)
-h4.add_route("DEFAULT", eth4)
-h5.add_route("DEFAULT", eth5)
-h6.add_route("DEFAULT", eth6)
-h7.add_route("DEFAULT", eth7)
-h8.add_route("DEFAULT", eth8)
-
-r1.add_route("DEFAULT", etr1e)
+r1.add_route("DEFAULT", etr1b)
 r2.add_route("DEFAULT", etr2a)
 
 # Set up an Experiment. This API takes the name of the experiment as a string.
 exp = Experiment("reno_vs_cubic_vs_westwood_vs_cdg")
 
-# Configure one flow from `h1` to `h3` and another from `h2` to `h4`.
-flow1 = Flow(h1, h5, eth5.get_address(), 0, 20, 1)
-flow2 = Flow(h2, h6, eth6.get_address(), 0, 20, 1)
+# Configure 8 flows. Four from `h1` to `h2` and the other four from `h2` to `h1` respectively. 
+# We do not use it as a TCP flow yet.
+# The `Flow` API takes in the source node, destination node, destination IP
+# address, start and stop time of the flow, and the total number of flows.
+# In this program, start time is 0 seconds, stop time is 200 seconds and the
+# number of streams is 1.
+flow1 = Flow(h1, h2, eth2.get_address(), 0, 200, 1)
+flow2 = Flow(h2, h1, eth1.get_address(), 0, 200, 1)
 
-flow3 = Flow(h3, h7, eth7.get_address(), 0, 20, 1)
-flow4 = Flow(h4, h8, eth8.get_address(), 0, 20, 1)
-
-# Use `flow1` as a TCP flow. TCP CUBIC is default in Linux.
+# Use `flow1` as a TCP CUBIC flow.
+# TCP CUBIC is default in Linux, hence no additional setting is required.
 exp.add_tcp_flow(flow1, "reno")
-
+exp.add_tcp_flow(flow1, "cubic")
+exp.add_tcp_flow(flow1, "westwood")
+exp.add_tcp_flow(flow1, "cdg")
+exp.add_tcp_flow(flow2, "reno")
 exp.add_tcp_flow(flow2, "cubic")
-
-exp.add_tcp_flow(flow3, "westwood")
-
-exp.add_tcp_flow(flow4, "cdg")
-
-# The following line enables collection of stats for the qdisc installed on
-# `etr1c` interface (connecting `r1` to `r2`), but it is commented because NeST
-# does not support stats collection for `choke` qdisc.
-# exp.require_qdisc_stats(etr1c)
+exp.add_tcp_flow(flow2, "westwood")
+exp.add_tcp_flow(flow2, "cdg")
 
 # Run the experiment
 exp.run()
