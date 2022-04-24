@@ -1,3 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (c) 2019-2022 NITK Surathkal
+
+########################
+# SHOULD BE RUN AS ROOT
+########################
+
+# This program emulates "TCP upload" experiment which takes AQM as input argument from the users. 
+# But the NO_TCP_FLOWS is set to `1` denoting there is going to be one tcp flow from the leftnode to the rightnode,
+# which is in accordance with its experiment name "tcp_1up". 
+# the left and right nodes get created which are connected by two routers `r1` and `r2`. 
+# Assuming left_nodes behave as clients and right_nodes as servers, this program calls the `tcp_up` method from the `tcp_up_down.py` file
+# to emulate the "TCP upload" scenario with `1` tcp flow.
+
 from tcp_up_down import tcp_up
 import sys
 

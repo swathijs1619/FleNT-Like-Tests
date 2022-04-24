@@ -4,15 +4,16 @@
 ########################
 # SHOULD BE RUN AS ROOT
 ########################
+
 from nest.topology import *
 from nest.experiment import *
 from nest.topology.network import Network
 from nest.topology.address_helper import AddressHelper
 
-# This program emulates point to point networks that connect two hosts `h1`
-# and `h2` via two routers `r1` and `r2`. One UDP flow is configured from `h1` to `h2`. 
-# The links between `h1` to `r1` and between `r2` to `h2` are edge links. The link between `r1`
-# and `r2` is the bottleneck link with lesser bandwidth and higher propagation delays.
+# This program emulates "tcp-2up_delay" experiment of flent, which is basically having 2 competing flows out of which 
+# one flow starts after "delay" seconds after the first flow was started.
+# Both the flows are from client to the server (left-to-right). 
+# Two hosts `h1` and `h2` are connected by two routers `r1` and `r2`.
 
 ##############################################################################
 #                              Network Topology                              #
@@ -20,14 +21,11 @@ from nest.topology.address_helper import AddressHelper
 #      1000mbit, 1ms -->       10mbit, 10ms -->       1000mbit, 1ms -->      #
 # h1 -------------------- r1 -------------------- r2 -------------------- h2 #
 #     <-- 1000mbit, 1ms       <-- 10mbit, 10ms        <-- 1000mbit, 1ms      #
-#																			 #
-# 																			 #                                                  
+#                                                                            #
 ##############################################################################
 
-# Assuming h1 is the client and h2 is the server
-
 # This program runs for 40 seconds and creates a new directory called
-# `udp-flood(date-timestamp)_dump`. It contains a `README`
+# `tcp-2up_delay(date-timestamp)_dump`. It contains a `README`
 # which provides details about the sub-directories and files within this
 # directory. See the plots in `netperf`, `ping` and `ss` sub-directories for
 # this program.
@@ -78,18 +76,26 @@ h2.add_route("DEFAULT", eth2)
 r1.add_route("DEFAULT", etr1b)
 r2.add_route("DEFAULT", etr2a)
 
-# Set up an Experiment. This API takes the name of the experiment as a string.
-exp = Experiment("udp-flood")
+## Define a parameter called "delay" and assign "5" seconds to it 
+delay = 5
 
-# Configure a flow from `h1` to `h2`. We do not use it as a TCP/UDP flow yet.
+# Set up an Experiment. This API takes the name of the experiment as a string.
+exp = Experiment("tcp-2up_delay")
+
+# Configure two flows. One from `h1` to `h2` and the other from `h2` to `h1` respectively. 
+# We do not use it as a TCP flow yet.
 # The `Flow` API takes in the source node, destination node, destination IP
 # address, start and stop time of the flow, and the total number of flows.
 # In this program, start time is 0 seconds, stop time is 40 seconds and the
 # number of streams is 1.
-flow1 = Flow(h1, h3, eth3.get_address(), 0, 40, 1)
 
-# Use `flow1` as a UDP flow, and set the rate at which it would send packets.
-exp.add_udp_flow(flow1, target_bandwidth="10mbit")
+flow1 = Flow(h1, h2, eth2.get_address(), 0, 40, 1)
+flow2 = Flow(h1, h2, eth2.get_address(), delay, 40+delay, 1)
+
+# Use `flow1` as a TCP CUBIC flow.
+# TCP CUBIC is default in Linux, hence no additional setting is required.
+exp.add_tcp_flow(flow1)
+exp.add_tcp_flow(flow2)
 
 # Run the experiment
 exp.run()

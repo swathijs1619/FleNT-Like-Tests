@@ -4,20 +4,15 @@
 ########################
 # SHOULD BE RUN AS ROOT
 ########################
+
 from nest.topology import *
 from nest.experiment import *
 from nest.topology.network import Network
 from nest.topology.address_helper import AddressHelper
 
-# This program emulates point to point networks that connect two hosts `h1`
-# and `h2` via two routers `r1` and `r2`. This program is similar to
-# `udp-point-to-point-3.py` in `examples/udp`. Instead of UDP, one TCP CUBIC
-# flow is configured from `h1` to `h2`. The links between `h1` to `r1` and
-# between `r2` to `h2` are edge links. The link between `r1` and `r2` is the
-# bottleneck link with lesser bandwidth and higher propagation delays. `pfifo`
-# queue discipline is enabled on the link from `r1` to `r2`, but not from `r2`
-# to `r1` because data packets flow in one direction only (`h1` to `h2`) in
-# this example.
+# This program emulates "tcp_2up_square" experiment of flent which is basically having 4 flows,
+# all the flows are from client to the server (left-to-right) but differing in their start and ending times, as well as the congestion control algorithm. 
+# Two hosts `h1` and `h2` are connected by two routers `r1` and `r2`.
 
 ##############################################################################
 #                              Network Topology                              #
@@ -25,14 +20,11 @@ from nest.topology.address_helper import AddressHelper
 #      1000mbit, 1ms -->       10mbit, 10ms -->       1000mbit, 1ms -->      #
 # h1 -------------------- r1 -------------------- r2 -------------------- h2 #
 #     <-- 1000mbit, 1ms       <-- 10mbit, 10ms        <-- 1000mbit, 1ms      #
-#																			 #
-# 																			 #                                                  
+#                                                                            #
 ##############################################################################
 
-# Assuming h1 is the client and h2 is the server
-
-# This program runs for 200 seconds and creates a new directory called
-# `tcp-cubic-point-to-point-3(date-timestamp)_dump`. It contains a `README`
+# This program runs for 40 seconds and creates a new directory called
+# `tcp-2up_square(date-timestamp)_dump`. It contains a `README`
 # which provides details about the sub-directories and files within this
 # directory. See the plots in `netperf`, `ping` and `ss` sub-directories for
 # this program.
@@ -83,19 +75,35 @@ h2.add_route("DEFAULT", eth2)
 r1.add_route("DEFAULT", etr1b)
 r2.add_route("DEFAULT", etr2a)
 
-# Set up an Experiment. This API takes the name of the experiment as a string.
-exp = Experiment("tcp_download")
+## Define a parameter called "delay" and assign "5" seconds to it 
+delay = 5
 
-# Configure a flow from `h1` to `h2`. We do not use it as a TCP flow yet.
+# Set up an Experiment. This API takes the name of the experiment as a string.
+exp = Experiment("tcp-2up_square")
+
+# Configure four flows, all from `h1` to `h2`.
+# First flow starts at `0` seconds and ends at `40` seconds
+# Second flow starts at `5` seconds and ends at `40+5` seconds
+# Third flow starts at `15` seconds and ends at `20` seconds
+# Fourth flow starts at `25` seconds and ends at `30` seconds
+# We do not use it as a TCP flow yet.
 # The `Flow` API takes in the source node, destination node, destination IP
 # address, start and stop time of the flow, and the total number of flows.
-# In this program, start time is 0 seconds, stop time is 200 seconds and the
-# number of flows is 1.
-flow1 = Flow(h2, h1, eth1.get_address(), 0, 40, 1)
+# Number of streams in all the 4 flows is `1`.
 
-# Use `flow1` as a TCP CUBIC flow.
+flow1 = Flow(h1, h2, eth2.get_address(), 0, 40, 1)
+flow2 = Flow(h1, h1, eth2.get_address(), delay, 2*delay, 1)
+flow3 = Flow(h1, h1, eth2.get_address(), 3*delay, 4*delay, 1)
+flow4 = Flow(h1, h2, eth2.get_address(), 5*delay, 6*delay, 1)
+
+# Use `flow1` and `flow2` as a TCP CUBIC flows.
+# Use `flow3` as a TCP reno flow.
+# Use `flow4` as a TCP westwood flow.
 # TCP CUBIC is default in Linux, hence no additional setting is required.
-exp.add_tcp_flow(flow1)
+exp.add_tcp_flow(flow1, 'cubic')
+exp.add_tcp_flow(flow2, 'cubic')
+exp.add_tcp_flow(flow1, 'reno')
+exp.add_tcp_flow(flow2, 'westwood')
 
 # Run the experiment
 exp.run()

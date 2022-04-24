@@ -9,15 +9,9 @@ from nest.experiment import *
 from nest.topology.network import Network
 from nest.topology.address_helper import AddressHelper
 
-# This program emulates point to point networks that connect two hosts `h1`
-# and `h2` via two routers `r1` and `r2`. This program is similar to
-# `udp-point-to-point-3.py` in `examples/udp`. Instead of UDP, one TCP CUBIC
-# flow is configured from `h1` to `h2`. The links between `h1` to `r1` and
-# between `r2` to `h2` are edge links. The link between `r1` and `r2` is the
-# bottleneck link with lesser bandwidth and higher propagation delays. `pfifo`
-# queue discipline is enabled on the link from `r1` to `r2`, but not from `r2`
-# to `r1` because data packets flow in one direction only (`h1` to `h2`) in
-# this example.
+# This program emulates "TCP bidirectional" experiment which is basically having 2 flows each from both the directions,
+# i.e., one from client to the server (left-to-right) and the other from the server to the client (right-to-left). 
+# Two hosts `h1` and `h2` are connected by two routers `r1` and `r2`.
 
 ##############################################################################
 #                              Network Topology                              #
@@ -28,8 +22,8 @@ from nest.topology.address_helper import AddressHelper
 #                                                                            #
 ##############################################################################
 
-# This program runs for 200 seconds and creates a new directory called
-# `tcp-cubic-point-to-point-3(date-timestamp)_dump`. It contains a `README`
+# This program runs for 40 seconds and creates a new directory called
+# `tcp-bidirectional(date-timestamp)_dump`. It contains a `README`
 # which provides details about the sub-directories and files within this
 # directory. See the plots in `netperf`, `ping` and `ss` sub-directories for
 # this program.
@@ -83,11 +77,12 @@ r2.add_route("DEFAULT", etr2a)
 # Set up an Experiment. This API takes the name of the experiment as a string.
 exp = Experiment("tcp-bidirectional")
 
-# Configure a flow from `h1` to `h2`. We do not use it as a TCP flow yet.
+# Configure two flows. One from `h1` to `h2` and the other from `h2` to `h1` respectively. 
+# We do not use it as a TCP flow yet.
 # The `Flow` API takes in the source node, destination node, destination IP
 # address, start and stop time of the flow, and the total number of flows.
-# In this program, start time is 0 seconds, stop time is 200 seconds and the
-# number of flows is 1.
+# In this program, start time is 0 seconds, stop time is 40 seconds and the
+# number of streams is 1.
 flow1 = Flow(h1, h2, eth2.get_address(), 0, 40, 1)
 flow2 = Flow(h2, h1, eth1.get_address(), 0, 40, 1)
 
