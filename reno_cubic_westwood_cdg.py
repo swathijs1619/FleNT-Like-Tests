@@ -63,7 +63,7 @@ etr2b.set_attributes("1000mbit", "1ms")  # from `r2` to `h2`
 
 # Set the link attributes: `h2` --> `r2` --> `r1` --> `h1`
 eth2.set_attributes("1000mbit", "1ms")  # from `h2` to `r2`
-etr2a.set_attributes("10mbit", "10ms")  # from `r2` to `r1`
+etr2a.set_attributes("10mbit", "10ms","pfifo")  # from `r2` to `r1`
 etr1a.set_attributes("1000mbit", "1ms")  # from `r1` to `h1`
 
 # Set default routes in `h1` and `h2`. Additionally, set default routes in
