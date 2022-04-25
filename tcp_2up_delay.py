@@ -24,7 +24,7 @@ from nest.topology.address_helper import AddressHelper
 #                                                                            #
 ##############################################################################
 
-# This program runs for 40 seconds and creates a new directory called
+# This program runs for 200 seconds and creates a new directory called
 # `tcp-2up_delay(date-timestamp)_dump`. It contains a `README`
 # which provides details about the sub-directories and files within this
 # directory. See the plots in `netperf`, `ping` and `ss` sub-directories for
@@ -80,19 +80,21 @@ r2.add_route("DEFAULT", etr2a)
 delay = 5
 
 # Set up an Experiment. This API takes the name of the experiment as a string.
-exp = Experiment("tcp-2up_delay")
+exp = Experiment("tcp-2up-delay")
 
-# Configure two flows. One from `h1` to `h2` and the other from `h2` to `h1` respectively. 
+# Configure two flows. Both from `h1` to `h2`.
+# `flow1` starts at `0` seconds and ends at `200` seconds.
+# `flow2` starts at `5` seconds and ends at `200+5` seconds. 
 # We do not use it as a TCP flow yet.
 # The `Flow` API takes in the source node, destination node, destination IP
 # address, start and stop time of the flow, and the total number of flows.
-# In this program, start time is 0 seconds, stop time is 40 seconds and the
+# In this program, start time is 0 seconds, stop time is 200 seconds and the
 # number of streams is 1.
 
-flow1 = Flow(h1, h2, eth2.get_address(), 0, 40, 1)
-flow2 = Flow(h1, h2, eth2.get_address(), delay, 40+delay, 1)
+flow1 = Flow(h1, h2, eth2.get_address(), 0, 200, 1)
+flow2 = Flow(h1, h2, eth2.get_address(), delay, 200+delay, 1)
 
-# Use `flow1` as a TCP CUBIC flow.
+# Use `flow1` and `flow2` as a TCP CUBIC flows.
 # TCP CUBIC is default in Linux, hence no additional setting is required.
 exp.add_tcp_flow(flow1)
 exp.add_tcp_flow(flow2)

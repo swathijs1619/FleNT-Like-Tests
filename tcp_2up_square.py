@@ -11,7 +11,8 @@ from nest.topology.network import Network
 from nest.topology.address_helper import AddressHelper
 
 # This program emulates "tcp_2up_square" experiment of flent which is basically having 4 flows,
-# all the flows are from client to the server (left-to-right) but differing in their start and ending times, as well as the congestion control algorithm. 
+# all the flows are from client to the server (left-to-right) but differing in their start and ending times, 
+# as well as the congestion control algorithm. 
 # Two hosts `h1` and `h2` are connected by two routers `r1` and `r2`.
 
 ##############################################################################
@@ -23,7 +24,7 @@ from nest.topology.address_helper import AddressHelper
 #                                                                            #
 ##############################################################################
 
-# This program runs for 40 seconds and creates a new directory called
+# This program runs for 200 seconds and creates a new directory called
 # `tcp-2up_square(date-timestamp)_dump`. It contains a `README`
 # which provides details about the sub-directories and files within this
 # directory. See the plots in `netperf`, `ping` and `ss` sub-directories for
@@ -79,21 +80,21 @@ r2.add_route("DEFAULT", etr2a)
 delay = 5
 
 # Set up an Experiment. This API takes the name of the experiment as a string.
-exp = Experiment("tcp-2up_square")
+exp = Experiment("tcp-2up-square")
 
 # Configure four flows, all from `h1` to `h2`.
-# First flow starts at `0` seconds and ends at `40` seconds
-# Second flow starts at `5` seconds and ends at `40+5` seconds
-# Third flow starts at `15` seconds and ends at `20` seconds
-# Fourth flow starts at `25` seconds and ends at `30` seconds
+# First flow starts at `0` seconds and ends at `200` seconds
+# Second flow starts at `5` seconds and ends at `2*5` seconds
+# Third flow starts at `3*5` seconds and ends at `4*5` seconds
+# Fourth flow starts at `5*5` seconds and ends at `6*5` seconds
 # We do not use it as a TCP flow yet.
 # The `Flow` API takes in the source node, destination node, destination IP
 # address, start and stop time of the flow, and the total number of flows.
 # Number of streams in all the 4 flows is `1`.
 
-flow1 = Flow(h1, h2, eth2.get_address(), 0, 40, 1)
-flow2 = Flow(h1, h1, eth2.get_address(), delay, 2*delay, 1)
-flow3 = Flow(h1, h1, eth2.get_address(), 3*delay, 4*delay, 1)
+flow1 = Flow(h1, h2, eth2.get_address(), 0, 200, 1)
+flow2 = Flow(h1, h2, eth2.get_address(), delay, 2*delay, 1)
+flow3 = Flow(h1, h2, eth2.get_address(), 3*delay, 4*delay, 1)
 flow4 = Flow(h1, h2, eth2.get_address(), 5*delay, 6*delay, 1)
 
 # Use `flow1` and `flow2` as a TCP CUBIC flows.
@@ -102,8 +103,8 @@ flow4 = Flow(h1, h2, eth2.get_address(), 5*delay, 6*delay, 1)
 # TCP CUBIC is default in Linux, hence no additional setting is required.
 exp.add_tcp_flow(flow1, 'cubic')
 exp.add_tcp_flow(flow2, 'cubic')
-exp.add_tcp_flow(flow1, 'reno')
-exp.add_tcp_flow(flow2, 'westwood')
+exp.add_tcp_flow(flow3, 'reno')
+exp.add_tcp_flow(flow4, 'westwood')
 
 # Run the experiment
 exp.run()

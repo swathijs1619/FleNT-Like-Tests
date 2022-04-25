@@ -26,7 +26,7 @@ from nest.topology.address_helper import AddressHelper
 
 # Assuming h1 is the client and h2 is the server
 
-# This program runs for 40 seconds and creates a new directory called
+# This program runs for 200 seconds and creates a new directory called
 # `udp-flood(date-timestamp)_dump`. It contains a `README`
 # which provides details about the sub-directories and files within this
 # directory. See the plots in `netperf`, `ping` and `ss` sub-directories for
@@ -84,9 +84,9 @@ exp = Experiment("udp-flood")
 # Configure a flow from `h1` to `h2`. We do not use it as a TCP/UDP flow yet.
 # The `Flow` API takes in the source node, destination node, destination IP
 # address, start and stop time of the flow, and the total number of flows.
-# In this program, start time is 0 seconds, stop time is 40 seconds and the
+# In this program, start time is 0 seconds, stop time is 200 seconds and the
 # number of streams is 1.
-flow1 = Flow(h1, h3, eth3.get_address(), 0, 40, 1)
+flow1 = Flow(h1, h2, eth2.get_address(), 0, 200, 1)
 
 # Use `flow1` as a UDP flow, and set the rate at which it would send packets.
 exp.add_udp_flow(flow1, target_bandwidth="10mbit")

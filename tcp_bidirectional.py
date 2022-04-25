@@ -22,7 +22,7 @@ from nest.topology.address_helper import AddressHelper
 #                                                                            #
 ##############################################################################
 
-# This program runs for 40 seconds and creates a new directory called
+# This program runs for 200 seconds and creates a new directory called
 # `tcp-bidirectional(date-timestamp)_dump`. It contains a `README`
 # which provides details about the sub-directories and files within this
 # directory. See the plots in `netperf`, `ping` and `ss` sub-directories for
@@ -81,14 +81,15 @@ exp = Experiment("tcp-bidirectional")
 # We do not use it as a TCP flow yet.
 # The `Flow` API takes in the source node, destination node, destination IP
 # address, start and stop time of the flow, and the total number of flows.
-# In this program, start time is 0 seconds, stop time is 40 seconds and the
+# In this program, start time is 0 seconds, stop time is 200 seconds and the
 # number of streams is 1.
-flow1 = Flow(h1, h2, eth2.get_address(), 0, 40, 1)
-flow2 = Flow(h2, h1, eth1.get_address(), 0, 40, 1)
+flow1 = Flow(h1, h2, eth2.get_address(), 0, 200, 1)
+flow2 = Flow(h2, h1, eth1.get_address(), 0, 200, 1)
 
 # Use `flow1` as a TCP CUBIC flow.
 # TCP CUBIC is default in Linux, hence no additional setting is required.
 exp.add_tcp_flow(flow1)
+exp.add_tcp_flow(flow2)
 
 # Run the experiment
 exp.run()
