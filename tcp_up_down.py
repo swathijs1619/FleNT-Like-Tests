@@ -183,12 +183,12 @@ def tcp_up(NO_TCP_FLOWS, AQM):
     # Configure flows from each `left_node` to the corresponding `right_node`. We do not use it as a TCP flow yet.
     # The `Flow` API takes in the source node, destination node, destination IP
     # address, start and stop time of the flow, and the total number of flows.
-    # In this program, start time is 0 seconds, stop time is 40 seconds and the
+    # In this program, start time is 0 seconds, stop time is 200 seconds and the
     # number of streams is 1.
 
     for i in range(NO_TCP_FLOWS):
         flow = Flow(
-            left_nodes[i], right_nodes[i], right_node_connections[i][0].address, 0, 40, 1
+            left_nodes[i], right_nodes[i], right_node_connections[i][0].address, 0, 200, 1
         )
         # Use TCP cubic which is the default
         experiment.add_tcp_flow(flow)
@@ -351,11 +351,11 @@ def tcp_down(NO_TCP_FLOWS, AQM):
     # Configure flows from each `right_node` to the corresponding `left_node`. We do not use it as a TCP flow yet.
     # The `Flow` API takes in the source node, destination node, destination IP
     # address, start and stop time of the flow, and the total number of flows.
-    # In this program, start time is 0 seconds, stop time is 40 seconds and the
+    # In this program, start time is 0 seconds, stop time is 200 seconds and the
     # number of streams is 1.
     for i in range(NO_TCP_FLOWS):
         flow = Flow(
-            right_nodes[i], left_nodes[i], left_node_connections[i][0].address, 0, 40, 1
+            right_nodes[i], left_nodes[i], left_node_connections[i][0].address, 0, 200, 1
         )
         # Use TCP cubic which is the default
         experiment.add_tcp_flow(flow)
