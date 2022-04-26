@@ -44,9 +44,6 @@ def tcp_up(NO_TCP_FLOWS, AQM):
     TOTAL_NODES_PER_SIDE = NO_TCP_FLOWS
 
     # Set the link attributes: `h1` --> `r1` --> `r2` --> `h2`
-    # Note: we enable `pfifo` queue discipline on the link from `r1` to `r2`.
-    # Default configuration of `pfifo` in Linux is used. For more details about
-    # `pfifo` in Linux, use this command on CLI: `man tc-pfifo`.
 
     ## Creating variables to store the latencies between client-to-router and router-to-router
     client_router_latency = '1ms'
@@ -211,9 +208,6 @@ def tcp_down(NO_TCP_FLOWS, AQM):
     TOTAL_NODES_PER_SIDE = NO_TCP_FLOWS
 
     # Set the link attributes: `h1` --> `r1` --> `r2` --> `h2`
-    # Note: we enable `pfifo` queue discipline on the link from `r1` to `r2`.
-    # Default configuration of `pfifo` in Linux is used. For more details about
-    # `pfifo` in Linux, use this command on CLI: `man tc-pfifo`.
 
     ## Creating variables to store the latencies between client-to-router and router-to-router
     client_router_latency = '1ms'
