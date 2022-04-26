@@ -133,8 +133,8 @@ def tcp_up(NO_TCP_FLOWS, AQM):
     for i in range(num_of_right_nodes):
         right_nodes[i].add_route("DEFAULT", right_node_connections[i][0])
 
-    # If the destination address for any packet in left-router is
-    # one of the left-nodes, forward the packet to that node
+    # If the destination address for any packet in right-router is
+    # one of the right-nodes, forward the packet to that node
     for i in range(num_of_right_nodes):
         right_router.add_route(
             right_node_connections[i][0].get_address(), right_node_connections[i][1]
@@ -189,10 +189,6 @@ def tcp_up(NO_TCP_FLOWS, AQM):
         )
         # Use TCP cubic which is the default
         experiment.add_tcp_flow(flow)
-
-    # Request traffic control stats
-    experiment.require_qdisc_stats(left_router_connection)
-    experiment.require_qdisc_stats(right_router_connection)
 
     # Running the experiment
     experiment.run()
@@ -297,8 +293,8 @@ def tcp_down(NO_TCP_FLOWS, AQM):
     for i in range(num_of_left_nodes):
         left_nodes[i].add_route("DEFAULT", left_node_connections[i][0])
 
-    # If the destination address for any packet in right-router is
-    # one of the right-nodes, forward the packet to that node
+    # If the destination address for any packet in left-router is
+    # one of the left-nodes, forward the packet to that node
     for i in range(num_of_left_nodes):
         left_router.add_route(
             left_node_connections[i][0].get_address(), left_node_connections[i][1]
@@ -353,10 +349,6 @@ def tcp_down(NO_TCP_FLOWS, AQM):
         )
         # Use TCP cubic which is the default
         experiment.add_tcp_flow(flow)
-
-    # Request traffic control stats
-    experiment.require_qdisc_stats(right_router_connection)
-    experiment.require_qdisc_stats(left_router_connection)
 
     # Running the experiment
     experiment.run()
